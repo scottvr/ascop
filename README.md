@@ -95,7 +95,7 @@ U+2019 '’': 2 occurrences
 No non-ASCII characters found in wrongslash.html
 ```
 
-Tell me exactly where they are in a while with unwanted characters
+Tell me exactly where they are in a file with unwanted characters
 ```bash
 ascop.py -l wrongslash-ooo-generated.html
 
