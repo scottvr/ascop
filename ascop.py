@@ -193,7 +193,9 @@ def main():
                         help='Normalize Unicode characters to ASCII equivalents when possible')
     parser.add_argument('-t', '--typographic', action='store_true',
                         help='Replace typographic chars with ASCII equivalents (smart quotes, em-dashes, etc)')
-    
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Mention every file processed, whether it contains offensive characters or not.')
+
     options = parser.parse_args()
     
     output_file = sys.stdout
@@ -235,7 +237,8 @@ def main():
                 for char, count in counter.most_common():
                     print(f"U+{ord(char):04X} '{char}': {count} occurrences", file=sys.stderr)
         else:
-            print(f"\nNo non-ASCII characters found in {filename}", file=sys.stderr)
+            if options.verbose:
+                print(f"\nNo non-ASCII characters found in {filename}", file=sys.stderr)
     
     if options.output:
         output_file.close()
