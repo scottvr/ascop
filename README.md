@@ -20,6 +20,7 @@ I looked at:
 - **iconv:** Great for converting between encodings but would require pre-processing to strip specific non-ASCII replacements. Also, seems lots of variance among implementations.
 - **tr:** Too primitive for handling multi-byte Unicode substitutions (e.g., changing ’ back to '). And let's face it, if we were going to use tr for the job, we'd place all the tr commands in a reusable shell script anyway, so we're already heading toward tool-forging territory.
 - **recode:** Overkill? The fact that its man page told me that there exists a manual I can read with `/usr/bin/info` was already too much.
+  
 Rather than contorting these tools into doing exactly what I need, `ascop` solves the problem directly.
 
 ### ASCop: A Simple, Purpose-Built Solution
