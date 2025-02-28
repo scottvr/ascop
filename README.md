@@ -29,6 +29,7 @@ Rather than contorting these tools into doing exactly what I need, `ascop` solve
 -  Lists their positions and counts.
 -  Replaces them with either ASCII equivalents or a placeholder of choice.
 -  Preserves encoding while ensuring ASCII integrity.
+  
 \*_one thing_ that splits naturally into four bullets
 ### That said...
 
