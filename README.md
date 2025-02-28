@@ -24,12 +24,12 @@ I looked at:
 Rather than contorting these tools into doing exactly what I need, `ascop` solves the problem directly.
 
 ### ASCop: A Simple, Purpose-Built Solution
-`ascop` does one thing well:
+`ascop` does _one thing_* well:
 -  Finds non-ASCII characters in a file.
 -  Lists their positions and counts.
 -  Replaces them with either ASCII equivalents or a placeholder of choice.
 -  Preserves encoding while ensuring ASCII integrity.
-
+\*_one thing_ that splits naturally into four bullets
 ### That said...
 
 I could totally see eventually scratching an itch to add more codepages, charsets, mapping features, etc. 
