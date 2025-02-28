@@ -125,4 +125,4 @@ No non-ASCII characters found in wrongslash-cleaned.html
 ```
 
 and in the spirit of you knowing more about what you want your text to be than some software, you can supply your own replacements with 
-`-r`, and as a result of creeping featurism, you can [normalize possibly edge case code points to Unicode equivalents](https://en.wikipedia.org/wiki/Unicode_equivalence) which can, optionally then be processed by speciying `-r` or `-t` replacement mapping.
+`-r`, and as a result of creeping featurism, you can [normalize possibly edge case code points to Unicode equivalents](https://en.wikipedia.org/wiki/Unicode_equivalence) which can, optionally then be processed by specifying `-r` or `-t` replacement mapping.
