@@ -48,3 +48,77 @@ Let me know of (or submit a PR fixing) anything I have missed.
 
 ____
 **__Ascop exists because plaintext should be just that - plain.__**
+
+# Oh yeah! Usage:
+
+```bash
+usage: ascop.py [-h] [-r CHAR] [-l] [-c] [-o FILE] [-e ENCODING] [-u] [-t]
+                [FILE ...]
+
+Detect and handle non-ASCII characters
+
+positional arguments:
+  FILE                  Files to process (default: stdin)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r CHAR, --replace CHAR
+                        Replace non-ASCII chars with CHAR
+  -l, --list            List all non-ASCII characters found with positions
+  -c, --count           Count occurrences of each non-ASCII character
+  -o FILE, --output FILE
+                        Write output to FILE instead of stdout
+  -e ENCODING, --encoding ENCODING
+                        Specify input encoding (default: utf-8)
+  -u, --use-unicode     Replace with similar-looking Unicode characters when
+                        possible (NFKD), to either convert to ASCI directly,
+                        or to a unicode char more likely to be in our typographic map.
+  -t, --typographic     Replace typographic chars with ASCII equivalents
+                        (smart quotes, em-dashes, etc)
+```
+
+### Examples:
+
+Find the files with unwanted characters
+```bash
+ascop.py -c w*.html
+
+Found 6 non-ASCII characters in wrongslash-ooo-generated.html
+
+Character count:
+U+2013 '–': 2 occurrences
+U+00A0 ' ': 2 occurrences
+U+2019 '’': 2 occurrences
+
+No non-ASCII characters found in wrongslash.html
+```
+
+Tell me exactly where they are in a while with unwanted characters
+```bash
+ascop.py -l wrongslash-ooo-generated.html
+
+Found 6 non-ASCII characters in wrongslash-ooo-generated.html
+
+Non-ASCII characters with positions:
+U+2013 '–' at position 6572
+U+2013 '–' at position 8589
+U+00A0 ' ' at position 8789
+U+2019 '’' at position 8821
+U+00A0 ' ' at position 8884
+U+2019 '’' at position 8939
+```
+
+Write out a new file, with the unwanted characters replaced with the ASCII I intended
+```bash
+[scottvr@grid html]$ ~/source/ascop/ascop.py -t -o wrongslash-cleaned.html  wrongslash-ooo-generated.html
+[scottvr@grid html]$ ~/source/ascop/ascop.py -l wrongslash-cleaned.html
+
+No non-ASCII characters found in wrongslash-cleaned.html
+[scottvr@grid html]$ wc -l wrongslash-cleaned.html wrongslash-ooo-generated.html
+   40 wrongslash-cleaned.html
+   40 wrongslash-ooo-generated.html
+   80 total
+```
+
+and in the spirit of you knowing more about what you want your text to be than some software, you can supply your own replacements with 
+`-r`, and as a result of creeping featurism, you can [normalize possibly edge case code points to Unicode equivalents](https://en.wikipedia.org/wiki/Unicode_equivalence) which can, optionally then be processed by speciying `-r` or `-t` replacement mapping.
