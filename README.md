@@ -75,7 +75,7 @@ optional arguments:
   -e ENCODING, --encoding ENCODING
                         Specify input encoding (default: utf-8)
   -u, --use-unicode     Replace with similar-looking Unicode characters when
-                        possible (NFKD), to either convert to ASCI directly,
+                        possible (NFKD), to either convert to ASCII directly,
                         or to a unicode char more likely to be in our typographic map.
   -t, --typographic     Replace typographic chars with ASCII equivalents
                         (smart quotes, em-dashes, etc)
