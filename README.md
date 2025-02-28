@@ -43,7 +43,7 @@ I think PR's containing additions to the TYPOGRAPHIC_MAP with fixes for your lea
 Let me know of (or submit a PR fixing) anything I have missed.
 
 ### In the meantime... 
-**ascop can**
+**ascop will**
 - give you control over your own text.
 - provide some options, and not impose defaults that require post-processing.
 - respect your intent rather than assuming "I know better than you."
