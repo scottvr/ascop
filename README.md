@@ -39,7 +39,7 @@ if this becomes a thing.
 
 ### and THAT said...
 
-I think PR's containing additions to the TYPOGRAPHIC_MAP with fixes for your least favorite, most peeve-y "smart" repalcements are swell. 
+I think PR's containing additions to the TYPOGRAPHIC_MAP with fixes for your least favorite, most peeve-y "smart" replacements are swell. 
 Let me know of (or submit a PR fixing) anything I have missed.
 
 ### In the meantime... 
