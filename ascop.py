@@ -170,8 +170,6 @@ def analyze_file(file, options):
             else:
                 # If we're not replacing characters, keep the original
                 processed_content.append(char)
-            else:
-                processed_content.append(char)
         else:
             processed_content.append(char)
     
