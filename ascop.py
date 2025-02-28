@@ -137,23 +137,40 @@ def analyze_file(file, options):
             non_ascii_chars.append(char)
             positions.append(pos)
             
-            # Determine what to replace the character with
-            if options.typographic and char in TYPOGRAPHIC_MAP:
-                # Use our specialized typographic map
-                processed_content.append(TYPOGRAPHIC_MAP[char])
-            elif options.replace is not None:
-                if options.use_unicode:
-                    # Try to find a similar ASCII character if possible
-                    normalized = unicodedata.normalize('NFKD', char)
-                    ascii_char = ''.join([c for c in normalized if ord(c) < 128])
-                    if ascii_char:
-                        processed_content.append(ascii_char)
-                    else:
-                        processed_content.append(options.replace)
-                else:
-                    processed_content.append(options.replace)
+            # For non-ASCII chars, process according to options
+            
+            # First apply Unicode normalization if enabled
+            # This might turn some characters into forms that are in our map
+            if options.use_unicode:
+                normalized = unicodedata.normalize('NFKD', char)
+                # If normalization produces ASCII-only, use that
+                ascii_normalized = ''.join([c for c in normalized if ord(c) < 128])
+                if ascii_normalized:
+                    processed_content.append(ascii_normalized)
+                    continue
+                # If normalization changes the character, use the normalized form for further processing
+                if normalized != char:
+                    char = normalized
+            
+            # Next, try specialized typographic mapping if enabled
+            if options.typographic:
+                # Check if any character in potentially normalized sequence is in our map
+                replaced = False
+                for c in char:
+                    if c in TYPOGRAPHIC_MAP:
+                        processed_content.append(TYPOGRAPHIC_MAP[c])
+                        replaced = True
+                        break
+                if replaced:
+                    continue
+            
+            # If we reach here and have a replacement character, use it
+            if options.replace is not None:
+                processed_content.append(options.replace)
             else:
                 # If we're not replacing characters, keep the original
+                processed_content.append(char)
+            else:
                 processed_content.append(char)
         else:
             processed_content.append(char)
@@ -175,7 +192,7 @@ def main():
     parser.add_argument('-e', '--encoding', default='utf-8',
                         help='Specify input encoding (default: utf-8)')
     parser.add_argument('-u', '--use-unicode', action='store_true',
-                        help='Replace with similar-looking Unicode characters when possible')
+                        help='Normalize Unicode characters to ASCII equivalents when possible')
     parser.add_argument('-t', '--typographic', action='store_true',
                         help='Replace typographic chars with ASCII equivalents (smart quotes, em-dashes, etc)')
     
