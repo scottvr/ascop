@@ -33,7 +33,12 @@ Rather than contorting these tools into doing exactly what I need, `ascop` solve
 -  Preserves encoding while ensuring ASCII integrity.
   
 \*_one thing_ that splits naturally into four bullets of course
-### That said...
+
+### Having said that...
+
+Maybe you're like the smart reddit user who informed me that Smart Punctuation can be disabled on the iPhone in keyboard settings and you don't have this problem. Heck, I won't have this problem in the future from my iPhone now (I hope) but that doesn't fix all the files I have that started out on my phone that have these little annoyances lurking in them. So `ascop` has still been useful to me, as shown below,.
+
+### and that said...
 
 I could totally see eventually scratching an itch to add more codepages, charsets, mapping features, etc. 
 In which case, ascop would become overkill too. I should avoid adding features and just learn to use `recode`
