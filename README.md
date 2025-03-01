@@ -36,7 +36,7 @@ Rather than contorting these tools into doing exactly what I need, `ascop` solve
 
 ### Having said that...
 
-Maybe you're like the smart reddit user who informed me that Smart Punctuation can be disabled on the iPhone in keyboard settings and you don't have this problem. Heck, I won't have this problem in the future from my iPhone now (I hope) but that doesn't fix all the files I have that started out on my phone that have these little annoyances lurking in them. So `ascop` has still been useful to me, as shown below,.
+Maybe you're like the smart reddit user who informed me that Smart Punctuation can be disabled on the iPhone in keyboard settings and you don't have this problem. Heck, I won't have this problem in the future from my iPhone now (I hope) but that doesn't fix all the files I have that started out on my phone that have these little annoyances lurking in them. So `ascop` is still useful to repair existing files, or files you may not have created, as demonstrated in the example usage below,.
 
 ### and that said...
 
