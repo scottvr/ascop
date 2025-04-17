@@ -172,7 +172,7 @@ def analyze_file(file, options):
                 cluster = normalized
 
         # Strip stickers if requested
-        if options.strip_stickers and is_emoji_cluster(cluster):
+        if options.strip_stickers and _is_emoji_cluster(cluster):
             non_ascii_chars.append(cluster)
             positions.append(start)
             continue
