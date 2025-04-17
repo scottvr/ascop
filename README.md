@@ -1,6 +1,13 @@
 # ascop
 *ascii operator, or ascii cop, or "ask op", or... A Case (and Remedy) Against Unsolicited Smart Punctuation*
 
+### NEW 2025/04/16
+Now has the ability to strip those annoying Unicode emojis that are cluttering up otherwise normal text (and are a sure sign someone is copy/pasting LLM code without much review IMHO. Nothing against LLMs as coding partners but no sane devnerd would use those characters to communicate.)
+
+``` bash
+  --strip-stickers      remove emoji, pictographs, and other Unicode sticker-type glyphs 
+                        that don't belong in a terminal, text file, or serious conversation.
+```
 ### The Principle of Least Astonishment (POLA)
 When I input text via a keyboard that has printed on it 32-64 ostensibly 7-bit ASCII characters (or twice that if the shifted variant is also displayed, or more of course but we're pushing up against our bitness limit now aren't we?) - or on a software version of one displayed on my iPhone *that even has enhanced long-press optional variants of these characters, should they be what I actually want*, I expect the exact characters I typed to be preserved in the document (or whatever sort of container) to which I enter them. 
 
