@@ -127,7 +127,6 @@ def _is_emoji_cluster(cluster):
     return all(regex.match(r'\p{Emoji}', c) for c in cluster)
 
 def analyze_file(file, options):
-    """Analyze a file or stream for non-ASCII characters."""
     try:
         if file == '-':
             content = sys.stdin.read()
