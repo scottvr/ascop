@@ -1,5 +1,5 @@
 # ascop
-*ascii operator, or ascii cop, or "ask op", or... A Case (and Remedy) Against Unsolicited Smart Punctuation*
+*ascii operator, or ascii cop, or "ask op", or maybe astonishment police ... A Case (and Remedy) Against Unsolicited Smart Punctuation*
 
 ### NEW 2025/04/16
 Now has the ability to strip those annoying Unicode emojis that are cluttering up otherwise normal text (and are a sure sign someone is copy/pasting LLM code without much review IMHO. Nothing against LLMs as coding partners but no sane devnerd would use those characters to communicate.)
