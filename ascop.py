@@ -126,6 +126,11 @@ def _remove_unicode_emoji(text):
 def _is_emoji_cluster(cluster):
     return all(regex.match(r'\p{Emoji}', c) for c in cluster)
 
+def _codepoints(cluster):
+    """Format a grapheme cluster as its U+ code points (handles multi-codepoint
+    clusters like ZWJ emoji, which ord() cannot)."""
+    return ' '.join(f"U+{ord(c):04X}" for c in cluster)
+
 def analyze_file(file, options):
     try:
         if file == '-':
@@ -139,60 +144,48 @@ def analyze_file(file, options):
     
     non_ascii_chars = []
     positions = []
-    emoji_chars = []
     processed_content = []
 
-    grapheme_boundaries = []
+    # One pass over grapheme clusters, O(n). Clusters keep multi-codepoint
+    # graphemes (e.g. ZWJ emoji sequences) intact so stripping removes them
+    # whole. `index` tracks the code-point offset for position reporting.
     index = 0
-    for g in grapheme.graphemes(content):
-        grapheme_boundaries.append((index, index + len(g)))
-        index += len(g)
-
-
-        for start, end in grapheme_boundaries:
-            cluster = content[start:end]
+    for cluster in grapheme.graphemes(content):
+        start = index
+        index += len(cluster)
 
         if all(ord(c) < 128 for c in cluster):
             processed_content.append(cluster)
             continue
 
-        # This cluster contains non-ASCII
+        # This cluster contains non-ASCII: record it for reporting.
         non_ascii_chars.append(cluster)
         positions.append(start)
 
-        # Normalize if requested
+        # Strip stickers (whole emoji grapheme) if requested.
+        if options.strip_stickers and _is_emoji_cluster(cluster):
+            continue  # omit from output entirely
+
+        # Normalize to ASCII via NFKD if requested.
         if options.use_unicode:
             normalized = unicodedata.normalize('NFKD', cluster)
-            ascii_normalized = ''.join([c for c in normalized if ord(c) < 128])
+            ascii_normalized = ''.join(c for c in normalized if ord(c) < 128)
             if ascii_normalized:
                 processed_content.append(ascii_normalized)
                 continue
-            if normalized != cluster:
-                cluster = normalized
+            cluster = normalized  # no ASCII form; fall through normalized
 
-        # Strip stickers if requested
-        if options.strip_stickers and _is_emoji_cluster(cluster):
-            non_ascii_chars.append(cluster)
-            positions.append(start)
+        # Typographic mapping, applied per code point within the cluster.
+        if options.typographic and any(c in TYPOGRAPHIC_MAP for c in cluster):
+            processed_content.append(''.join(TYPOGRAPHIC_MAP.get(c, c) for c in cluster))
             continue
 
-        # Typographic mapping
-        if options.typographic:
-            replaced = False
-            for c in cluster:
-                if c in TYPOGRAPHIC_MAP:
-                    processed_content.append(TYPOGRAPHIC_MAP[c])
-                    replaced = True
-                    break
-            if replaced:
-                continue
-
-        # Fallback replacement
+        # Fallback replacement.
         if options.replace is not None:
             processed_content.append(options.replace)
         else:
             processed_content.append(cluster)
-  
+
     return ''.join(processed_content), non_ascii_chars, positions
 
 def main():
@@ -251,13 +244,13 @@ def main():
             if options.list:
                 print("\nNon-ASCII characters with positions:", file=sys.stderr)
                 for char, pos in zip(non_ascii_chars, positions):
-                    print(f"U+{ord(char):04X} '{char}' at position {pos}", file=sys.stderr)
+                    print(f"{_codepoints(char)} '{char}' at position {pos}", file=sys.stderr)
             
             if options.count:
                 counter = Counter(non_ascii_chars)
                 print("\nCharacter count:", file=sys.stderr)
                 for char, count in counter.most_common():
-                    print(f"U+{ord(char):04X} '{char}': {count} occurrences", file=sys.stderr)
+                    print(f"{_codepoints(char)} '{char}': {count} occurrences", file=sys.stderr)
 
         else:
             if options.verbose:
