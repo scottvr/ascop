@@ -23,19 +23,28 @@ Options:
   -o, --output FILE     Write output to FILE instead of stdout
   -e, --encoding ENC    Specify input encoding (default: utf-8)
   -u, --use-unicode     Replace with similar-looking Unicode characters when possible,
-  -s, --strip-stickers  remove emoji, pictographs, and other Unicode sticker-type glyphs 
+  -s, --strip-stickers  remove emoji, pictographs, and other Unicode sticker-type glyphs
                         that don't belong in a terminal, text file, or serious conversation.
+  --check               Linter/CI mode: exit non-zero if any non-ASCII is found,
+                        quiet on success. Writes no output.
+  --html-entities       Encode non-ASCII as HTML entities (em dash -> &mdash;)
+  --numeric             Encode non-ASCII as hex numeric refs (em dash -> &#x2014;)
+  --css-escapes         Encode non-ASCII as CSS unicode escapes (middot -> \\0000B7 )
+  --backslash-u         Encode non-ASCII as source-string escapes (em dash -> \\u2014)
 
 Examples:
   ascop.py file.txt                      # Report non-ASCII characters
   ascop.py -r '?' file.txt               # Replace with question marks
   ascop.py -l -c file.txt                # List and count occurrences
+  ascop.py --check src/*.py              # Fail (exit 1) if any file has non-ASCII
+  ascop.py --html-entities page.html     # Keep the glyph, encode it for HTML
   cat file.txt | ascop.py -r '_' -o clean.txt  # Read from stdin, write to file
 """
 
 import sys
 import argparse
 import unicodedata
+import html.entities
 import regex
 import grapheme
 from collections import Counter
@@ -82,37 +91,37 @@ TYPOGRAPHIC_MAP = {
     '\u200d': '',     # Zero width joiner
     
     # Ligatures
-    '\ufb01': 'fi',   # Latin small ligature fi
-    '\ufb02': 'fl',   # Latin small ligature fl
+    '\ufb01': 'fi',   # latin small ligature fi
+    '\ufb02': 'fl',   # latin small ligature fl
     
     # Common accented characters
-    '\u00e0': 'a',    # à
-    '\u00e1': 'a',    # á
-    '\u00e2': 'a',    # â
-    '\u00e3': 'a',    # ã
-    '\u00e4': 'a',    # ä
-    '\u00e5': 'a',    # å
-    '\u00e8': 'e',    # è
-    '\u00e9': 'e',    # é
-    '\u00ea': 'e',    # ê
-    '\u00eb': 'e',    # ë
-    '\u00ec': 'i',    # ì
-    '\u00ed': 'i',    # í
-    '\u00ee': 'i',    # î
-    '\u00ef': 'i',    # ï
-    '\u00f2': 'o',    # ò
-    '\u00f3': 'o',    # ó
-    '\u00f4': 'o',    # ô
-    '\u00f5': 'o',    # õ
-    '\u00f6': 'o',    # ö
-    '\u00f9': 'u',    # ù
-    '\u00fa': 'u',    # ú
-    '\u00fb': 'u',    # û
-    '\u00fc': 'u',    # ü
-    '\u00f1': 'n',    # ñ
-    '\u00ff': 'y',    # ÿ
-    '\u00fd': 'y',    # ý
-    '\u00e7': 'c',    # ç
+    '\u00e0': 'a',    # latin small letter a with grave
+    '\u00e1': 'a',    # latin small letter a with acute
+    '\u00e2': 'a',    # latin small letter a with circumflex
+    '\u00e3': 'a',    # latin small letter a with tilde
+    '\u00e4': 'a',    # latin small letter a with diaeresis
+    '\u00e5': 'a',    # latin small letter a with ring above
+    '\u00e8': 'e',    # latin small letter e with grave
+    '\u00e9': 'e',    # latin small letter e with acute
+    '\u00ea': 'e',    # latin small letter e with circumflex
+    '\u00eb': 'e',    # latin small letter e with diaeresis
+    '\u00ec': 'i',    # latin small letter i with grave
+    '\u00ed': 'i',    # latin small letter i with acute
+    '\u00ee': 'i',    # latin small letter i with circumflex
+    '\u00ef': 'i',    # latin small letter i with diaeresis
+    '\u00f2': 'o',    # latin small letter o with grave
+    '\u00f3': 'o',    # latin small letter o with acute
+    '\u00f4': 'o',    # latin small letter o with circumflex
+    '\u00f5': 'o',    # latin small letter o with tilde
+    '\u00f6': 'o',    # latin small letter o with diaeresis
+    '\u00f9': 'u',    # latin small letter u with grave
+    '\u00fa': 'u',    # latin small letter u with acute
+    '\u00fb': 'u',    # latin small letter u with circumflex
+    '\u00fc': 'u',    # latin small letter u with diaeresis
+    '\u00f1': 'n',    # latin small letter n with tilde
+    '\u00ff': 'y',    # latin small letter y with diaeresis
+    '\u00fd': 'y',    # latin small letter y with acute
+    '\u00e7': 'c',    # latin small letter c with cedilla
     
     # Currency
     '\u20ac': 'EUR',  # Euro sign
@@ -130,6 +139,37 @@ def _codepoints(cluster):
     """Format a grapheme cluster as its U+ code points (handles multi-codepoint
     clusters like ZWJ emoji, which ord() cannot)."""
     return ' '.join(f"U+{ord(c):04X}" for c in cluster)
+
+def _encode_char(cp, mode):
+    """Encode a single non-ASCII code point 7-bit for the target format.
+    Keeps the glyph's identity (unlike a fold) so it round-trips."""
+    if mode == 'html':
+        # Named entity when one exists (em dash -> &mdash;), else hex numeric.
+        name = html.entities.codepoint2name.get(cp)
+        if name is not None:
+            return f'&{name};'
+        return f'&#x{cp:X};'
+    if mode == 'numeric':
+        # Hex numeric character reference (em dash -> &#x2014;).
+        return f'&#x{cp:X};'
+    if mode == 'css':
+        # CSS unicode escape. A CSS escape consumes exactly one trailing
+        # whitespace as its terminator, so we always emit one space to close it
+        # (middle dot -> "\0000B7 "). Note: to render a literal space that
+        # follows, the caller needs a second space -- the escape eats the first.
+        return f'\\{cp:06X} '
+    if mode == 'backslash':
+        # Source-string escape (Python/JS): \uXXXX for the BMP, \UXXXXXXXX above.
+        if cp <= 0xFFFF:
+            return f'\\u{cp:04X}'
+        return f'\\U{cp:08X}'
+    raise ValueError(f"unknown encode mode: {mode!r}")
+
+def _encode_cluster(cluster, mode):
+    """Encode the non-ASCII code points of a cluster, passing ASCII through."""
+    return ''.join(
+        c if ord(c) < 128 else _encode_char(ord(c), mode) for c in cluster
+    )
 
 def analyze_file(file, options):
     try:
@@ -175,6 +215,13 @@ def analyze_file(file, options):
                 continue
             cluster = normalized  # no ASCII form; fall through normalized
 
+        # Encoded output: keep the glyph's identity but render it 7-bit for the
+        # target format (HTML entities, CSS escapes, source-string escapes).
+        # Takes precedence over the typographic fold and -r.
+        if getattr(options, 'encode_mode', None):
+            processed_content.append(_encode_cluster(cluster, options.encode_mode))
+            continue
+
         # Typographic mapping, applied per code point within the cluster.
         if options.typographic and any(c in TYPOGRAPHIC_MAP for c in cluster):
             processed_content.append(''.join(TYPOGRAPHIC_MAP.get(c, c) for c in cluster))
@@ -207,9 +254,29 @@ def main():
     parser.add_argument('-t', '--typographic', action='store_true',
                         help='Replace typographic chars with ASCII equivalents (smart quotes, em-dashes, etc)')
     parser.add_argument('-s', '--strip-stickers', action='store_true',
-                        help="Remove emoji, pictographs, and other Unicode sticker-type glyphs that don't belong in a terminal, text file, or serious conversation. No ÎõÎõ")
+                        help="Remove emoji, pictographs, and other Unicode sticker-type glyphs that don't belong in a terminal, text file, or serious conversation.")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Mention every file processed, whether it contains offensive characters or not.')
+    parser.add_argument('--check', action='store_true',
+                        help='Linter/CI mode: exit non-zero if any non-ASCII is '
+                             'found, quiet on success. Writes no output.')
+
+    # Encoded output: keep the glyph, render it 7-bit for a target format.
+    # Mutually exclusive -- pick one target. All map to options.encode_mode.
+    encode = parser.add_mutually_exclusive_group()
+    encode.add_argument('--html-entities', dest='encode_mode',
+                        action='store_const', const='html',
+                        help='Encode non-ASCII as HTML entities (em dash -> &mdash;)')
+    encode.add_argument('--numeric', dest='encode_mode',
+                        action='store_const', const='numeric',
+                        help='Encode non-ASCII as hex numeric refs (em dash -> &#x2014;)')
+    encode.add_argument('--css-escapes', dest='encode_mode',
+                        action='store_const', const='css',
+                        help='Encode non-ASCII as CSS unicode escapes (middot -> \\0000B7 )')
+    encode.add_argument('--backslash-u', dest='encode_mode',
+                        action='store_const', const='backslash',
+                        help='Encode non-ASCII as source-string escapes (em dash -> \\u2014)')
+    parser.set_defaults(encode_mode=None)
 
     options = parser.parse_args()
     
@@ -221,24 +288,40 @@ def main():
             print(f"Error opening output file: {e}", file=sys.stderr)
             return 1
     
+    exit_code = 0
+
     for file in options.files:
         processed_content, non_ascii_chars, positions = analyze_file(file, options)
-        
+
+        # Reporting name.
+        filename = 'stdin' if file == '-' else file
+
+        # A decode error means the file could not be read as clean text; in
+        # check mode that is a failure, otherwise we skip it (already warned).
         if processed_content is None:
+            if options.check:
+                exit_code = 1
             continue
-            
-        # Write the processed content if we're replacing or using typographic mapping
-        if options.replace is not None or options.typographic:
+
+        # Linter/CI mode: report violations to stderr, write nothing, and flag
+        # the run for a non-zero exit. Stay silent when the file is clean.
+        if options.check:
+            if non_ascii_chars:
+                exit_code = 1
+                print(f"{filename}: {len(non_ascii_chars)} non-ASCII character(s)",
+                      file=sys.stderr)
+                if options.verbose:
+                    for char, pos in zip(non_ascii_chars, positions):
+                        print(f"  {_codepoints(char)} '{char}' at position {pos}",
+                              file=sys.stderr)
+            continue
+
+        # Write the processed content if we're replacing, folding, or encoding.
+        if options.replace is not None or options.typographic or options.encode_mode:
             print(processed_content, file=output_file, end='')
-        
-        # Reporting
-        if file == '-':
-            filename = 'stdin'
-        else:
-            filename = file
-            
+
         if non_ascii_chars:
-            if not options.replace and not options.typographic:
+            if not options.replace and not options.typographic and not options.encode_mode:
                 print(f"\nFound {len(non_ascii_chars)} non-ASCII characters in {filename}", file=sys.stderr)
             
             if options.list:
@@ -258,8 +341,8 @@ def main():
     
     if options.output:
         output_file.close()
-    
-    return 0
+
+    return exit_code
 
 if __name__ == "__main__":
     sys.exit(main())

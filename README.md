@@ -1,29 +1,41 @@
 # ascop
-*ascii operator, or ascii cop, or "ask op", or maybe astonishment police ... A Case (and Remedy) Against Unsolicited Smart Punctuation*
+*ascii operator, or ascii cop, or "ask op", or maybe astonishment police ... A Case (and Remedy) Against Unsolicited Smart Punctuation and more!*
 
-### NEW 2025/04/16
-Now has the ability to strip those annoying Unicode emojis that are cluttering up otherwise normal text (and are a sure sign someone is copy/pasting LLM code without much review IMHO. Nothing against LLMs as coding partners but no sane devnerd would use those characters to communicate.)
+## Why not just use iconv / unidecode / a sed one-liner?
 
-``` bash
-  --strip-stickers      remove emoji, pictographs, and other Unicode sticker-type glyphs 
-                        that don't belong in a terminal, text file, or serious conversation.
-```
+ Because those either destroy the character or make you maintain the fragile part yourself. iconv -t ASCII//TRANSLIT and unidecode *transliterate*: that is, they "produce some ASCII from this glyph," which is lossy, locale- and implementation-dependent (glibc, BSD, and macOS iconv disagree), and — crucially — they don't know what you originally typed. i
+ 
+ Hand-rolled ised/perl one-liners with substitutions like `s/\xe2\x80\x94/--/g` are brittle. When the  input encoding shifts or a variant glyph slips through (there are roughly eight different space characters and several dash forms alone), will not DWYM.
+
+ascop fills the gap those tools leave; it does three intent-preserving things, according to your intent.
+
+- Fold the specific smart substitution back to the keystroke you actually made — —→--, "/"→", …→... — reversing the autocorrect instead of romanizing the text.
+- Encode, don't destroy. Keep the glyph's identity but render it 7-bit for a specific target: --html-entities (&mdash;), --css-escapes (\0000B7 ), --numeric (&#x2014;), --backslash-u (\u2014). No other common tool offers "keep the character, express it safely for HTML/CSS/source."
+- Gate it. `--check` exits non-zero the moment unwanted Unicode (smart punctuation, zero-width characters, an emoji smuggled in from a copy-paste) — shows up in a file. Drop ascop in a pre-commit hook or CI and stop shipping stuff you never typed.
+
+`ascop` is a Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK romanization or full charset conversion, you want recode or unidecode — and that's fine.
+
+
+
 ### The Principle of Least Astonishment (POLA)
-When I input text via a keyboard that has printed on it 32-64 ostensibly 7-bit ASCII characters (or twice that if the shifted variant is also displayed, or more of course but we're pushing up against our bitness limit now aren't we?) - or on a software version of one displayed on my iPhone *that even has enhanced long-press optional variants of these characters, should they be what I actually want*, I expect the exact characters I typed to be preserved in the document (or whatever sort of container) to which I enter them. 
+When I input text via a keyboard that has printed on it 32-64 ostensibly 7-bit ASCII characters (or twice that if the shifted variant is also displayed, or more of course but we're pushing up against our bitness limit now aren't we?) - or on a software version of one displayed on my iPhone *that even has enhanced long-press optional variants of these characters, should they be what I actually want* and expectr; I expect the exact characters I typed to be preserved in the document (or whatever sort of container) to which I enter them. 
 
-The automatic substitution of a minus (-) with an emdash (—), a single quote (') with a curly apostrophe (’), or a simple double quote (") with a typographically "correct" quotation mark (“ or ”) is a violation of [POLA](https://en.wikipedia.org/wiki/Principle_of_least_astonishment) because I never explicitly asked for those substitutions. Of course what proves to be astonishing to different types of users can be as different as the users and use cases themselves, and a company creating software for profit will aim to serve whichever class of users is the majority. The same nuance can be found when discussing [DWIM](https://en.m.wikipedia.org/wiki/DWIM) and more subtle and potentially more dangerous, [WYSIWYG](https://en.m.wikipedia.org/wiki/WYSIWYG) which, tangentially is also addressed in `ascop` from another angle with its `-u` option. `ascop` is for the minority then, I guess; for those for whom majority software does not Do What they Mean. For those of you who are frustrated by not Getting What You think You See, and who are Astonished (though decreasingly so with time and proliferation of smarts) at Least.
+The automatic substitution of a minus with an emdash, a single quotei with a curly apostrophe (’), or a simple double quote (") with a typographically "correct" quotation mark (“ or ”) is a violation of [POLA](https://en.wikipedia.org/wiki/Principle_of_least_astonishment) because I never explicitly asked for those substitutions. Of course what proves to be astonishing to different types of users can be as different as the users and use cases themselves, and a company creating software for profit will aim to serve whichever class of users is the majority. 
+
+The same nuance can be found when discussing [DWIM](https://en.m.wikipedia.org/wiki/DWIM) and more subtle and potentially more dangerous, [WYSIWYG](https://en.m.wikipedia.org/wiki/WYSIWYG) which, tangentially is also addressed in `ascop` from another angle with its `-u` option. `ascop` is for the minority then, I guess; for those for whom majority software does not Do What they Mean. For those of you who are frustrated by not Getting What You think You See, and who are Astonished (though decreasingly so with time and proliferation of smarts) at Least.
 
 ### The Problem With Smart Punctuation
-Certainly for some people, having their software (such as a word processor) act as an editor and typesetter is seen as a beneficial feature, as it saves them time they would otherwise have to spend - after initially writing - on re-formatting. However, this insidious creeping presence in note-taking apps, text messages, and what would sensibly be assumed to be an actual  *plain-text* export means that what I type is often not what I get when I copy-paste or send the text elsewhere. I am often having to spend time editing text to "unsmarten" (or endumben?) it, usually only after  some other process chokes on the text. Some examples:
+Certainly for some people, having their software (such as a word processor) act as an editor and typesetter is seen as a beneficial feature, as it saves them time they would otherwise have to spend on re-formatting after initially typing something. However, this insidious creeping presence in note-taking apps, text messages, and what would sensibly be assumed to be an actual  *plain-text* export means that what I type is often not what I get when I copy-paste or send the text elsewhere. I am often having to spend time editing text to "unsmarten" (or endumben?) it, usually only after some other process chokes on the text. Some examples:
 
-- Sending code snippets where an emdash breaks syntax. (your programming language probably expects single and double ticks, not &ldquo; (`&ldquo;`) and &rdquo; (`&rdquo;`) surrounding strings.)
+- Sending code snippets where an emdash breaks syntax. 
+- similarky, your programming language probably expects single and double ticks, not &ldquo; (`&ldquo;`) and &rdquo; (`&rdquo;`) surrounding strings.
 - Writing a list of commands, intending to paste them into a terminal to be parsed by a shell, where ticks and backticks have special meanings, and a fancy apostrophe causes errors.
-- Writing a plaintext file that you should be able to expect to be portable across systems.
+- Writing a plaintext file that expect to be portable across systems.
 - Using SMS or simple messaging apps, or even HTML form fields where unexpected characters may break formatting.
-   - (and if you're like me and often need to compose your long body of text outside of an app prone to crashing, refreshing, or otherwise finding ways to lose a whole bunch of typing you've done with no way to recover it, finding that when you paste the long-form text into the shaky input are, you break it anyway with some uninvited text your editor has "helpfully" swapped in for you.)
+   - (and if you're like me and often need to compose your long body of text outside of an app prone to crashing, refreshing, or otherwise finding ways to lose a whole bunch of typing you've done with no way to recover it, finding that when you paste the long-form text into the shaky input area, you break it anyway with some uninvited text your editor has "helpfully" swapped in for you.)
 - Oh, how could I have forgotten to mention in the preface perhaps my favorite of them all. If I type three dots, full stops, periods, or decimal points - ASCII 0x2E - I want `...`, not &mldr; (`&mldr;`)
-### Existing Tools Too Much or Not Enough
 
+### Existing Tools Too Much or Not Enough
 I looked at:
 
 - **iconv:** Great for converting between encodings but would require pre-processing to strip specific non-ASCII replacements. Also, seems lots of variance among implementations.
@@ -47,9 +59,8 @@ Maybe you're like the smart reddit user who informed me that Smart Punctuation c
 
 ### and that said...
 
-I could totally see eventually scratching an itch to add more codepages, charsets, mapping features, etc. 
-In which case, ascop would become overkill too. I should avoid adding features and just learn to use `recode`
-if this becomes a thing.
+I could totally see eventually scratching an itch to add more codepages, charsets, mapping features, etc.  In which case, ascop would become overkill too. I should avoid adding features and just learn to use `recode` if this becomes a thing.
+
 
 ### and THAT said...
 
@@ -69,6 +80,8 @@ ____
 
 ```bash
 usage: ascop.py [-h] [-r CHAR] [-l] [-c] [-o FILE] [-e ENCODING] [-u] [-t]
+                [-s] [-v] [--check]
+                [--html-entities | --numeric | --css-escapes | --backslash-u]
                 [FILE ...]
 
 Detect and handle non-ASCII characters
@@ -91,6 +104,37 @@ optional arguments:
                         or to a unicode char more likely to be in our typographic map.
   -t, --typographic     Replace typographic chars with ASCII equivalents
                         (smart quotes, em-dashes, etc)
+  -s, --strip-stickers  Remove emoji and other Unicode sticker-type glyphs
+  --check               Linter/CI mode: exit non-zero if any non-ASCII is
+                        found, quiet on success. Writes no output.
+  --html-entities       Encode non-ASCII as HTML entities (em dash -> &mdash;)
+  --numeric             Encode non-ASCII as hex numeric refs (em dash -> &#x2014;)
+  --css-escapes         Encode non-ASCII as CSS unicode escapes (middot -> \0000B7 )
+  --backslash-u         Encode non-ASCII as source-string escapes (em dash -> \u2014)
+```
+
+### Linting / CI gate
+
+`--check` turns ascop into a pre-commit or CI gate: it exits non-zero the moment
+any non-ASCII slips into a tracked file, and stays silent when everything is
+clean. Add `-v` to see exactly which code points offend and where.
+
+```bash
+ascop.py --check src/*.py            # exit 1 if any file has non-ASCII, else 0
+ascop.py --check -v README.md        # ... and list the offenders on failure
+```
+
+### Encoded output (keep the glyph, encode it 7-bit)
+
+Unlike `iconv //TRANSLIT`, `unidecode`, or `recode` -- which transliterate and
+*destroy* the glyph -- these modes preserve the character's identity while
+rendering it as 7-bit text for a specific target format. Pick one:
+
+```bash
+ascop.py --html-entities page.html   # em dash -> &mdash;   (named, else numeric)
+ascop.py --numeric      page.html    # em dash -> &#x2014;  (hex numeric ref)
+ascop.py --css-escapes  styles.css   # middle dot -> \0000B7  (trailing space terminates)
+ascop.py --backslash-u  strings.py   # em dash -> \u2014   (source-string escape)
 ```
 
 ### Examples:
