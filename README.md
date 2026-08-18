@@ -1,7 +1,7 @@
 # ~~ascop~~  polascii
 ### POLA+ASCII
 
-*i fka , ascii operator, or ascii cop, or "ask op", or maybe astonishment police ... 
+*f/k/a ascii operator, or ascii cop, or "ask op", or maybe astonishment police ... 
 
 
 ## Why not just use iconv / unidecode / a sed one-liner?
