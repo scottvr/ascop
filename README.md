@@ -18,8 +18,7 @@ Plus, **none of the other tools function as a linter** (silent, return code valu
 - Encode, don't destroy. Keep the glyph's identity but render it 7-bit for a specific target: --html-entities (&mdash;), --css-escapes (\0000B7 ), --numeric (&#x2014;), --backslash-u (\u2014). No other common tool offers "keep the character, express it safely for HTML/CSS/source."
 - Gate it. `--check` exits non-zero the moment unwanted Unicode (smart punctuation, zero-width characters, an emoji smuggled in from a copy-paste) shows up in a file. Drop  in a pre-commit hook or CI and stop shipping stuff you never typed.
 - Catch the *dangerous* stuff. `--security` is the linter that stays out of your way on legitimate UTF-8 (accented names, quoted foreign text) but fails the build on the Unicode that can actually bite you: bidirectional control characters (the "Trojan Source" attack, CVE-2021-42574), bare zero-width/invisible characters, and homoglyphs (the Cyrillic `а`-for-`a` trick). `iconv` will never be a security linter; this is the gap  actually fills.
-
-`` is a Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK romanization or full charset conversion, you want recode or unidecode — and that's fine.
+- _**$is a Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK aromanization or full charset conversion, you want recode or unidecode — and that's fine.
 
 
 
