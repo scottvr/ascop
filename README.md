@@ -1,4 +1,4 @@
-# ~~ascop~~ mhas been renamed POLASCII
+# ~~ascop~~  polascii
 ### POLA+ASCII
 
 *i fka , ascii operator, or ascii cop, or "ask op", or maybe astonishment police ... 
