@@ -12,14 +12,13 @@
 
 Plus, **none of the other tools function as a linter** (silent, return code value logic) nor can they be run with the intent of looking for **security-exposure via glyphs** (such as [CVE-2021-42574](https://nvd.nist.gov/vuln/detail/cve-2021-42574) and eliminating them from your codebase.
 
-~~~~`polascii` fills the gap those tools leave; it does three intent-preserving things, according to your intent.
+`polascii` fills the gap those tools leave; it does these intent-preserving things, according to your intent.
 
 - Fold the specific smart substitution back to the keystroke you actually made — —→--, "/"→", …→... — reversing the autocorrect instead of romanizing the text.
-- Encode, don't destroy. Keep the glyph's identity but render it 7-bit for a specific target: --html-entities (&mdash;), --css-escapes (\0000B7 ), --numeric (&#x2014;), --backslash-u (\u2014). No other common tool offers "keep the character, express it safely for HTML/CSS/source."
-- Gate it. `--check` exits non-zero the moment unwanted Unicode (smart punctuation, zero-width characters, an emoji smuggled in from a copy-paste) shows up in a file. Drop  in a pre-commit hook or CI and stop shipping stuff you never typed.
-- Catch the *dangerous* stuff. `--security` is the linter that stays out of your way on legitimate UTF-8 (accented names, quoted foreign text) but fails the build on the Unicode that can actually bite you: bidirectional control characters (the "Trojan Source" attack, CVE-2021-42574), bare zero-width/invisible characters, and homoglyphs (the Cyrillic `а`-for-`a` trick). `iconv` will never be a security linter; this is the gap  actually fills.
-- _**$is a Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK aromanization or full charset conversion, you want recode or unidecode — and that's fine.
-
+- Keep the glyph's identity but render it 7-bit for a specific target: --html-entities (&mdash;), --css-escapes (\0000B7 ), --numeric (&#x2014;), --backslash-u (\u2014). No other common tool offers "keep the character, express it safely for HTML/CSS/source." Encode, don't destroy. 
+- put it behind an approval gate. `--check` exits non-zero when it encounters unwanted Unicode (smart punctuation, zero-width characters, an emoji smuggled in from a copy-paste). Drop it in a pre-commit hook or CI and don't worry that you'll ship something you didn't type.
+- Catch the *dangerous* stuff. `--security` acts as a linter.  In this mode legitimate UTF-8 (accented names, quoted foreign text) get a pass but will fail lthe build on: bidirectional control characters (the "Trojan Source" attack, CVE-2021-42574), bare zero-width/invisible characters, and homoglyphs (the Cyrillic `а`-for-`a` trick). `iconv` will never be a security linter
+- Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK aromanization or full charset conversion, you want recode or unidecode — and that's fine.
 
 
 ### The Principle of Least Astonishment (POLA)
@@ -47,20 +46,20 @@ I looked at:
 - **tr:** Too primitive for handling multi-byte Unicode substitutions (e.g., changing ’ back to '). And let's face it, if we were going to use tr for the job, we'd place all the tr commands in a reusable shell script anyway, so we're already heading toward tool-forging territory.
 - **recode:** Overkill? The fact that its man page told me that there exists a manual I can read with `/usr/bin/info` was already too much.
   
-Rather than contorting these tools into doing exactly what I need, `` solves the problem directly.
+Rather than contorting these tools into doing exactly what I need, `polascii` solves the problem directly.
 
-### : A Simple, Purpose-Built Solution
-`` does _one thing_* well:
+### polascii: purpose-built and simple
+`polascii` does _one thing_\* well:
 -  Finds non-ASCII characters in a file.
 -  Lists their positions and counts.
 -  Replaces them with either ASCII equivalents or a placeholder of choice.
 -  Preserves encoding while ensuring ASCII integrity.
   
-\*_one thing_ that splits naturally into four bullets of course
+\*ok that's "_one thing_" that splits naturally into four bullets of course
 
 ### Having said that...
 
-Maybe you're like the smart reddit user who informed me that Smart Punctuation can be disabled on the iPhone in keyboard settings and you don't have this problem. Heck, I won't have this problem in the future from my iPhone now (I hope) but that doesn't fix all the files I have that started out on my phone that have these little annoyances lurking in them. So `` is still useful to repair existing files, or files you may not have created, as demonstrated in the example usage below,.
+Maybe you're like the smart reddit user who informed me that Smart Punctuation can be disabled on the iPhone in keyboard settings and you don't have this problem. Heck, I won't have this problem in the future from my iPhone now (I hope) but that doesn't fix all the files I have that started out on my phone that have these little annoyances lurking in them. So `polascii` is still useful to repair existing files, or files you may not have created yourself, as demonstrated in the example usage below,.
 
 ### and that said...
 
@@ -73,13 +72,13 @@ I think PR's containing additions to the TYPOGRAPHIC_MAP with fixes for your lea
 Let me know of (or submit a PR fixing) anything I have missed.
 
 ### In the meantime... 
-** will**
+`polascii` ** will**
 - give you control over your own text.
 - provide some options, and not impose defaults that require post-processing.
 - respect your intent rather than assuming "I know better than you."
 
 ____
-**__ exists because plaintext should be just that - plain.__**
+`polascii` **exists** *because plaintext should be just that - plain.*
 
 # Oh yeah! Usage:
 
@@ -89,7 +88,7 @@ usage: .py [-h] [-r CHAR] [-l] [-c] [-o FILE] [-e ENCODING] [-u] [-t]
                 --numeric | --css-escapes | --backslash-u]
                 [FILE ...]
 
-Detect and handle non-ASCII characters
+Deatect and handle non-ASCII characters
 
 positional arguments:
   FILE                  Files to process (default: stdin)
@@ -165,10 +164,8 @@ characters that can actually deceive a human or a parser:
   watermarking, or smuggling data. (A ZWJ inside a legitimate emoji sequence is
   recognized as part of the emoji and left alone -- no false alarm.)
 - **Homoglyphs** -- non-ASCII letters that impersonate ASCII ones, e.g. a
-  Cyrillic `а` (U+0430) standing in for a Latin `a`.
-
-```bash
-.py --security src/**/*.py      # exit 1 only on the dangerous classes
+  Cyrillic `а` (U+0430) standing in for a Latin `a`
+  --security src/**/*.py      # exit 1 only on the dangerous classes
 ```
 
 For safety,  never echoes a raw bidi override or invisible character back
@@ -193,7 +190,7 @@ rendering it as 7-bit text for a specific target format. Pick one:
 
 Find the files with unwanted characters
 ```bash
-.py -c w*.html
+polascii.py -c w*.html
 
 Found 6 non-ASCII characters in wrongslash-ooo-generated.html
 
@@ -207,7 +204,7 @@ No non-ASCII characters found in wrongslash.html
 
 Tell me exactly where they are in a file with unwanted characters
 ```bash
-.py -l wrongslash-ooo-generated.html
+$ polascii.py -l wrongslash-ooo-generated.html
 
 Found 6 non-ASCII characters in wrongslash-ooo-generated.html
 
@@ -222,11 +219,11 @@ U+2019 '’' at position 8939
 
 Write out a new file, with the unwanted characters replaced with the ASCII I intended
 ```bash
-[scottvr@grid html]$ ~/source//ascop.py -t -o wrongslash-cleaned.html  wrongslash-ooo-generated.html
-[scottvr@grid html]$ ~/source//ascop.py -l wrongslash-cleaned.html
+$ polascii -t -o wrongslash-cleaned.html  wrongslash-ooo-generated.html
+$ polascii -l wrongslash-cleaned.html
 
 No non-ASCII characters found in wrongslash-cleaned.html
-[scottvr@grid html]$ wc -l wrongslash-cleaned.html wrongslash-ooo-generated.html
+$ wc -l wrongslash-cleaned.html wrongslash-ooo-generated.html
    40 wrongslash-cleaned.html
    40 wrongslash-ooo-generated.html
    80 total
