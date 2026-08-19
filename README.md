@@ -80,7 +80,7 @@ Let me know of (or submit a PR fixing) anything I have missed.
 ____
 `polascii` **exists** *because plaintext should be just that - plain.*
 
-# Oh yeah! Usage:
+## Oh yeah! Usage:
 
 ```bash
 usage: .py [-h] [-r CHAR] [-l] [-c] [-o FILE] [-e ENCODING] [-u] [-t]
@@ -154,8 +154,8 @@ payload.py: 3 non-ASCII character(s)  [WARNING: 1 bidi-control, 1 invisible]
 ### Security audit: bidi / invisible / homoglyph
 
 `--check` fails on *any* non-ASCII, which is too blunt for a repo that
-legitimately contains UTF-8 (accented author names, quoted foreign text). That
-is what `--security` is for: it ignores benign Unicode and fails only on the
+legitimately contains UTF-8 (accented author names, quoted foreign text). 
+`--security` **ignores** benign Unicode and fails only on the  
 characters that can actually deceive a human or a parser:
 
 - **Bidirectional controls** -- the "Trojan Source" attack ([CVE-2021-42574](https://nvd.nist.gov/vuln/detail/CVE-2021-42574)),
@@ -165,7 +165,9 @@ characters that can actually deceive a human or a parser:
   recognized as part of the emoji and left alone -- no false alarm.)
 - **Homoglyphs** -- non-ASCII letters that impersonate ASCII ones, e.g. a
   Cyrillic `а` (U+0430) standing in for a Latin `a`
-  --security src/**/*.py      # exit 1 only on the dangerous classes
+
+``` bash
+ polascii --security src/**/*.py      # exit 1 only on the dangerous classes
 ```
 
 For safety,  never echoes a raw bidi override or invisible character back
@@ -180,10 +182,10 @@ Unlike `iconv //TRANSLIT`, `unidecode`, or `recode` -- which transliterate and
 rendering it as 7-bit text for a specific target format. Pick one:
 
 ```bash
-.py --html-entities page.html   # em dash -> &mdash;   (named, else numeric)
-.py --numeric      page.html    # em dash -> &#x2014;  (hex numeric ref)
-.py --css-escapes  styles.css   # middle dot -> \0000B7  (trailing space terminates)
-.py --backslash-u  strings.py   # em dash -> \u2014   (source-string escape)
+polascii --html-entities page.html   # em dash -> &mdash;   (named, else numeric)
+polascii --numeric      page.html    # em dash -> &#x2014;  (hex numeric ref)
+polascii --css-escapes  styles.css   # middle dot -> \0000B7  (trailing space terminates)
+polascii --backslash-u  strings.py   # em dash -> \u2014   (source-string escape)
 ```
 
 ### Examples:
