@@ -18,7 +18,8 @@ Plus, **none of the other tools function as a linter** (silent, return code valu
 - Keep the glyph's identity but render it 7-bit for a specific target: --html-entities (&mdash;), --css-escapes (\0000B7 ), --numeric (&#x2014;), --backslash-u (\u2014). No other common tool offers "keep the character, express it safely for HTML/CSS/source." Encode, don't destroy. 
 - put it behind an approval gate. `--check` exits non-zero when it encounters unwanted Unicode (smart punctuation, zero-width characters, an emoji smuggled in from a copy-paste). Drop it in a pre-commit hook or CI and don't worry that you'll ship something you didn't type.
 - Catch the *dangerous* stuff. `--security` acts as a linter.  In this mode legitimate UTF-8 (accented names, quoted foreign text) get a pass but will fail lthe build on: bidirectional control characters (the "Trojan Source" attack, CVE-2021-42574), bare zero-width/invisible characters, and homoglyphs (the Cyrillic `а`-for-`a` trick). `iconv` will never be a security linter
-- Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK aromanization or full charset conversion, you want recode or unidecode — and that's fine.
+
+### POLASCII is a Principle-of-Least-Astonishment Enforcer/Restorer and a lint gate, not a transliterator. If you want CJK aromanization or full charset conversion, you want recode or unidecode — and that's fine.
 
 
 ### The Principle of Least Astonishment (POLA)
